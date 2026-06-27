@@ -380,6 +380,11 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/task-automation/index.ts"
 
+[functions.task-suggestions]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/task-suggestions/index.ts"
+
 [analytics]
 enabled = true
 port = 54327

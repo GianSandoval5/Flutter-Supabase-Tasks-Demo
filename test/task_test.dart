@@ -1,5 +1,6 @@
 import 'package:flutter_supabase_tasks_demo/features/tasks/domain/task.dart';
 import 'package:flutter_supabase_tasks_demo/features/tasks/domain/task_automation_run.dart';
+import 'package:flutter_supabase_tasks_demo/features/tasks/domain/task_suggestion.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -58,5 +59,18 @@ void main() {
     expect(run.completedTasks, 3);
     expect(run.notes, 'Demo');
     expect(run.createdAt, createdAt);
+  });
+
+  test('TaskSuggestion.fromMap reads suggestion payloads', () {
+    final suggestion = TaskSuggestion.fromMap({
+      'title': 'Planificar objetivos de la semana',
+      'type': 'event',
+      'reason': 'Es lunes; conviene organizar el trabajo semanal.',
+    });
+
+    expect(suggestion.title, 'Planificar objetivos de la semana');
+    expect(suggestion.type, 'event');
+    expect(suggestion.reason, contains('lunes'));
+    expect(suggestion.isEvent, isTrue);
   });
 }

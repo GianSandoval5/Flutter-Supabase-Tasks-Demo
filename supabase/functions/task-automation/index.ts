@@ -47,14 +47,14 @@ async function handleRequest(req: Request): Promise<Response> {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
-        },
-      });
+      },
+    });
 
-      await verifyCaller(req, supabase);
+    await verifyCaller(req, supabase);
 
-      const { data, error } = await supabase.rpc("register_task_automation_run", {
-        p_run_type: runType,
-        p_source: source,
+    const { data, error } = await supabase.rpc("register_task_automation_run", {
+      p_run_type: runType,
+      p_source: source,
       p_notes: notes,
     });
 

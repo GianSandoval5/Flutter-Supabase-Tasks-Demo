@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../data/tasks_repository.dart';
 import '../domain/task.dart';
+import '../domain/task_suggestion.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -19,7 +20,7 @@ class _TasksPageState extends State<TasksPage> {
   late final Stream<List<Task>> _tasksStream;
 
   bool _saving = false;
-  bool _runningAutomation = false;
+  bool _loadingSuggestions = false;
 
   @override
   void initState() {
@@ -67,18 +68,83 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
-  Future<void> _runAutomation() async {
-    setState(() => _runningAutomation = true);
+  Future<void> _showSuggestions() async {
+    setState(() => _loadingSuggestions = true);
 
     try {
-      final run = await _repository.runTaskAutomation();
-      _showMessage(
-        'Function ejecutada. Total: ${run.totalTasks}, pendientes: ${run.pendingTasks}.',
-      );
+      final suggestions = await _repository.getTaskSuggestions();
+      if (!mounted) return;
+      await _openSuggestionsSheet(suggestions);
     } catch (error) {
-      _showMessage('No se pudo ejecutar la Function: $error', isError: true);
+      _showMessage('No se pudieron cargar sugerencias: $error', isError: true);
     } finally {
-      if (mounted) setState(() => _runningAutomation = false);
+      if (mounted) setState(() => _loadingSuggestions = false);
+    }
+  }
+
+  Future<void> _openSuggestionsSheet(List<TaskSuggestion> suggestions) {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Sugerencias',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (suggestions.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Text('No hay sugerencias disponibles.'),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.62,
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: suggestions.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final suggestion = suggestions[index];
+                          return _SuggestionTile(
+                            suggestion: suggestion,
+                            onAccept: () => _acceptSuggestion(suggestion),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _acceptSuggestion(TaskSuggestion suggestion) async {
+    try {
+      await _repository.addTask(suggestion.title);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      _showMessage('Sugerencia agregada como tarea.');
+    } catch (error) {
+      _showMessage('No se pudo agregar la sugerencia: $error', isError: true);
     }
   }
 
@@ -111,15 +177,15 @@ class _TasksPageState extends State<TasksPage> {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton.filledTonal(
-              tooltip: 'Ejecutar Function',
-              onPressed: _runningAutomation ? null : _runAutomation,
-              icon: _runningAutomation
+              tooltip: 'Sugerir tareas',
+              onPressed: _loadingSuggestions ? null : _showSuggestions,
+              icon: _loadingSuggestions
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.bolt),
+                  : const Icon(Icons.auto_awesome),
             ),
           ),
           Padding(
@@ -266,6 +332,71 @@ class _TasksPageState extends State<TasksPage> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestionTile extends StatelessWidget {
+  const _SuggestionTile({
+    required this.suggestion,
+    required this.onAccept,
+  });
+
+  final TaskSuggestion suggestion;
+  final VoidCallback onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  suggestion.isEvent
+                      ? Icons.event_available
+                      : Icons.task_alt,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    suggestion.title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              suggestion.reason,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: onAccept,
+                icon: const Icon(Icons.add),
+                label: Text(
+                  suggestion.isEvent ? 'Agregar como tarea' : 'Agregar tarea',
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

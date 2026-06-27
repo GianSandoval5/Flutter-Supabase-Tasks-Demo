@@ -135,6 +135,8 @@ con Supabase:
 - `supabase/03_task_automation.sql`: tabla de ejecuciones y funcion SQL.
 - `supabase/functions/task-automation/index.ts`: Edge Function protegida con
   `AUTOMATION_SECRET`.
+- `supabase/functions/task-suggestions/index.ts`: Edge Function que sugiere
+  tareas o eventos segun las tareas del usuario.
 - `supabase/04_schedule_task_automation.sql`: ejemplo para programarla con
   `pg_cron` + `pg_net`.
 - `docs/charla_2_functions.md`: guion completo para la charla 2.
@@ -142,25 +144,26 @@ con Supabase:
 Flujo recomendado:
 
 ```powershell
-.\supabase\functions\deploy-task-automation.ps1
+.\supabase\functions\deploy-functions.ps1
 ```
 
 Si no tienes el proyecto linkeado, pasa el project ref:
 
 ```powershell
-.\supabase\functions\deploy-task-automation.ps1 -ProjectRef TU_PROJECT_REF
+.\supabase\functions\deploy-functions.ps1 -ProjectRef TU_PROJECT_REF
 ```
 
 Ese script sube los secretos desde `supabase/functions/.env` y despliega
-`task-automation` con `--use-api`, por lo que no requiere Docker.
+`task-automation` y `task-suggestions` con `--use-api`, por lo que no requiere
+Docker.
 
 Luego ejecuta `supabase/03_task_automation.sql`, guarda `project_url` y
 `task_automation_secret` en Vault, y usa `supabase/04_schedule_task_automation.sql`
 para programar la ejecucion diaria. La expresion incluida corre a las 08:00 de
 Peru, porque `pg_cron` trabaja en UTC.
 
-En el emulador, el boton con icono de rayo en `Mis tareas` invoca la Function
-remota `task-automation` usando la sesion autenticada del usuario. Para que ese
+En el emulador, el boton con icono de brillo en `Mis tareas` invoca la Function
+remota `task-suggestions` usando la sesion autenticada del usuario. Para que ese
 boton funcione, la Function debe estar desplegada en Supabase.
 
 ## Estructura principal
@@ -184,6 +187,7 @@ supabase/
   03_task_automation.sql
   04_schedule_task_automation.sql
   functions/task-automation/index.ts
+  functions/task-suggestions/index.ts
 docs/
   demo_script_45min.md
   charla_2_functions.md

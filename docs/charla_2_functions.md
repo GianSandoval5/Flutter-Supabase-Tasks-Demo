@@ -22,6 +22,7 @@ supabase/
   functions/
     .env.example
     task-automation/index.ts
+    task-suggestions/index.ts
 docs/
   charla_2_functions.md
 ```
@@ -93,8 +94,8 @@ guardes `task_automation_secret` en Vault.
 
 Desde el emulador:
 
-La pantalla `Mis tareas` tiene un boton con icono de rayo. Ese boton llama a
-`task-automation` usando la sesion autenticada de Supabase, por eso no se mete
+La pantalla `Mis tareas` tiene un boton con icono de brillo. Ese boton llama a
+`task-suggestions` usando la sesion autenticada de Supabase, por eso no se mete
 `AUTOMATION_SECRET` dentro de Flutter.
 
 Para correr la app en Android con `Ctrl+F5`, completa `.env` en la raiz:
@@ -111,6 +112,11 @@ Si quieres forzar el emulador desde terminal:
 ```powershell
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .vscode/run-flutter-emulator.ps1 -DeviceId emulator-5554
 ```
+
+Si quieres copiar y pegar la Function en el Dashboard de Supabase, crea una Edge
+Function llamada `task-suggestions` y pega el contenido de
+`supabase/functions/task-suggestions/index.ts`. Debe quedar sin Verify JWT,
+porque la propia Function valida la sesion del usuario o el secreto backend.
 
 Prueba local opcional de la Function, si quieres usar Docker:
 
@@ -135,13 +141,13 @@ Invoke-RestMethod `
 Produccion:
 
 ```powershell
-.\supabase\functions\deploy-task-automation.ps1
+.\supabase\functions\deploy-functions.ps1
 ```
 
 Si el proyecto no esta linkeado:
 
 ```powershell
-.\supabase\functions\deploy-task-automation.ps1 -ProjectRef TU_PROJECT_REF
+.\supabase\functions\deploy-functions.ps1 -ProjectRef TU_PROJECT_REF
 ```
 
 Comandos equivalentes:
@@ -149,6 +155,7 @@ Comandos equivalentes:
 ```powershell
 supabase secrets set --env-file supabase/functions/.env
 supabase functions deploy task-automation --no-verify-jwt --use-api
+supabase functions deploy task-suggestions --no-verify-jwt --use-api
 ```
 
 Con project ref explicito:
@@ -156,6 +163,7 @@ Con project ref explicito:
 ```powershell
 supabase secrets set --env-file supabase/functions/.env --project-ref TU_PROJECT_REF
 supabase functions deploy task-automation --no-verify-jwt --use-api --project-ref TU_PROJECT_REF
+supabase functions deploy task-suggestions --no-verify-jwt --use-api --project-ref TU_PROJECT_REF
 ```
 
 Llamada de prueba en PowerShell:
@@ -169,6 +177,19 @@ Invoke-RestMethod `
     "x-automation-secret" = "CAMBIA_ESTE_VALOR_LARGO"
   } `
   -Body '{"run_type":"manual","source":"dashboard","notes":"Ejecucion manual para charla 2"}'
+```
+
+Llamada de prueba para sugerencias:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "https://TU-PROYECTO.supabase.co/functions/v1/task-suggestions" `
+  -Method POST `
+  -Headers @{
+    "Content-Type" = "application/json"
+    "x-automation-secret" = "CAMBIA_ESTE_VALOR_LARGO"
+  } `
+  -Body '{"limit":4}'
 ```
 
 ## Paso 4: programar una hora concreta
@@ -236,8 +257,8 @@ programada, sensible o con claves secretas vive en Supabase.
 ## Guion rapido para mostrarlo
 
 1. Mostrar `03_task_automation.sql` y explicar que la base registra ejecuciones.
-2. Mostrar `task-automation/index.ts` y explicar el secreto `x-automation-secret`.
-3. Invocar la Edge Function manualmente.
-4. Consultar `task_automation_runs` y ver el nuevo registro.
-5. Mostrar `04_schedule_task_automation.sql` y explicar `pg_cron` + `pg_net`.
+2. Mostrar `task-suggestions/index.ts` y explicar que analiza tareas del usuario.
+3. Presionar el boton de brillo en el emulador y mostrar sugerencias.
+4. Aceptar una sugerencia y verla aparecer como tarea.
+5. Mostrar `task-automation/index.ts` y `04_schedule_task_automation.sql` para cerrar con cron.
 6. Cerrar con el caso de "otra funcion" usando el snippet de `fetch`.

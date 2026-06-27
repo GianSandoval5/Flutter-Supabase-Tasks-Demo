@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/task.dart';
 import '../domain/task_automation_run.dart';
+import '../domain/task_suggestion.dart';
 
 class TasksRepository {
   TasksRepository({SupabaseClient? client})
@@ -58,5 +59,33 @@ class TasksRepository {
     }
 
     return TaskAutomationRun.fromMap(Map<String, dynamic>.from(run));
+  }
+
+  Future<List<TaskSuggestion>> getTaskSuggestions() async {
+    final response = await _client.functions.invoke(
+      'task-suggestions',
+      body: {'limit': 4},
+    );
+
+    final data = response.data;
+    if (data is! Map) {
+      throw StateError('Respuesta inesperada de la Function.');
+    }
+
+    final payload = Map<String, dynamic>.from(data);
+    if (payload['ok'] != true) {
+      throw StateError(payload['error']?.toString() ?? 'Function fallo.');
+    }
+
+    final suggestions = payload['suggestions'];
+    if (suggestions is! List) {
+      throw StateError('La Function no devolvio sugerencias.');
+    }
+
+    return suggestions
+        .whereType<Map>()
+        .map((item) => TaskSuggestion.fromMap(Map<String, dynamic>.from(item)))
+        .where((suggestion) => suggestion.title.trim().isNotEmpty)
+        .toList(growable: false);
   }
 }
