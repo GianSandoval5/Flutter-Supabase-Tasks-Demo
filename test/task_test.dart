@@ -1,4 +1,5 @@
 import 'package:flutter_supabase_tasks_demo/features/tasks/domain/task.dart';
+import 'package:flutter_supabase_tasks_demo/features/tasks/domain/task_automation_run.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -33,5 +34,29 @@ void main() {
     expect(task.isDone, isFalse);
     expect(task.createdAt, isA<DateTime>());
     expect(task.userId, isNull);
+  });
+
+  test('TaskAutomationRun.fromMap reads function run rows', () {
+    final createdAt = DateTime.utc(2026, 6, 26, 13);
+
+    final run = TaskAutomationRun.fromMap({
+      'id': '9',
+      'run_type': 'manual',
+      'source': 'flutter-emulator',
+      'total_tasks': '5',
+      'pending_tasks': 2,
+      'completed_tasks': 3,
+      'notes': 'Demo',
+      'created_at': createdAt.toIso8601String(),
+    });
+
+    expect(run.id, 9);
+    expect(run.runType, 'manual');
+    expect(run.source, 'flutter-emulator');
+    expect(run.totalTasks, 5);
+    expect(run.pendingTasks, 2);
+    expect(run.completedTasks, 3);
+    expect(run.notes, 'Demo');
+    expect(run.createdAt, createdAt);
   });
 }

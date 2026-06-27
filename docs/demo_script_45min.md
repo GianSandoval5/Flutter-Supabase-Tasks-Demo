@@ -33,4 +33,5 @@
 - Explicar `stream(primaryKey: ['id'])`.
 
 ## 43 - 45 min: Cierre
+- Siguiente parte: `docs/charla_2_functions.md` muestra una Edge Function programada con `pg_cron`.
 - Buenas prácticas: RLS, separar repositorios, no exponer claves secretas, mover lógica sensible a Edge Functions.

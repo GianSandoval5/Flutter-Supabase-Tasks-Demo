@@ -46,3 +46,15 @@ app.*.map.json
 
 # Ingorar el script de ejemplo para correr la aplicación en web, ya que contiene claves de ejemplo
 scripts/run_web.example.sh
+
+# Edge Functions: no versionar secretos locales.
+supabase/functions/.env
+supabase/functions/.env.*
+!supabase/functions/.env.example
+supabase/functions/node_modules/
+supabase/functions/package-lock.json
+
+.env
+supabase/.branches/
+supabase/.temp/*
+!supabase/.temp/cli-latest

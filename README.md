@@ -12,6 +12,7 @@ Proyecto de ejemplo para una charla práctica de Flutter + Supabase. La demo mue
 - Crear, completar y eliminar tareas desde Flutter.
 - Actualización en vivo usando Realtime.
 - Soporte web listo para correr en Chrome.
+- Charla 2 con Supabase Edge Functions, secretos, procesos automaticos y cron.
 
 ## Requisitos
 
@@ -73,6 +74,24 @@ flutter run -d android \
 
 Para Magic Link en Android/iOS, agrega el redirect `io.supabase.flutter://login-callback/` en la configuración de URLs de Supabase Auth.
 
+## Ejecutar en emulador con Ctrl+F5
+
+El archivo `.vscode/launch.json` esta configurado para que `Ctrl+F5` ejecute la
+app Flutter en Android usando Supabase remoto. No levanta Supabase local.
+
+Primero completa `.env` en la raiz:
+
+```text
+SUPABASE_URL=https://TU-PROYECTO.supabase.co
+SUPABASE_PUBLISHABLE_KEY=TU_PUBLISHABLE_KEY
+```
+
+No uses `SUPABASE_SERVICE_ROLE_KEY` como publishable key; esa clave es admin y
+no debe entrar al APK.
+
+Luego abre un emulador Android, selecciona `Flutter Android: emulador (.env)` en
+VS Code y presiona `Ctrl+F5`.
+
 ## Validar antes de la charla
 
 ```bash
@@ -101,6 +120,42 @@ El build confirma compilación. La prueba de integración real requiere credenci
 
 Hay un guion más detallado en `docs/demo_script_45min.md`.
 
+## Charla 2: Functions y automatizaciones
+
+Este repo tambien incluye una segunda parte para mostrar procesos automaticos
+con Supabase:
+
+- `supabase/03_task_automation.sql`: tabla de ejecuciones y funcion SQL.
+- `supabase/functions/task-automation/index.ts`: Edge Function protegida con
+  `AUTOMATION_SECRET`.
+- `supabase/04_schedule_task_automation.sql`: ejemplo para programarla con
+  `pg_cron` + `pg_net`.
+- `docs/charla_2_functions.md`: guion completo para la charla 2.
+
+Flujo recomendado:
+
+```powershell
+.\supabase\functions\deploy-task-automation.ps1
+```
+
+Si no tienes el proyecto linkeado, pasa el project ref:
+
+```powershell
+.\supabase\functions\deploy-task-automation.ps1 -ProjectRef TU_PROJECT_REF
+```
+
+Ese script sube los secretos desde `supabase/functions/.env` y despliega
+`task-automation` con `--use-api`, por lo que no requiere Docker.
+
+Luego ejecuta `supabase/03_task_automation.sql`, guarda `project_url` y
+`task_automation_secret` en Vault, y usa `supabase/04_schedule_task_automation.sql`
+para programar la ejecucion diaria. La expresion incluida corre a las 08:00 de
+Peru, porque `pg_cron` trabaja en UTC.
+
+En el emulador, el boton con icono de rayo en `Mis tareas` invoca la Function
+remota `task-automation` usando la sesion autenticada del usuario. Para que ese
+boton funcione, la Function debe estar desplegada en Supabase.
+
 ## Estructura principal
 
 ```text
@@ -119,8 +174,15 @@ lib/
 supabase/
   01_schema_tasks.sql
   02_seed_optional.sql
+  03_task_automation.sql
+  04_schedule_task_automation.sql
+  functions/task-automation/index.ts
 docs/
   demo_script_45min.md
+  charla_2_functions.md
+.vscode/
+  launch.json
+  run-flutter-emulator.ps1
 ```
 
 ## Problemas comunes

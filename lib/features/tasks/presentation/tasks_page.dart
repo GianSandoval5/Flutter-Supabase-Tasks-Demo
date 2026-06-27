@@ -19,6 +19,7 @@ class _TasksPageState extends State<TasksPage> {
   late final Stream<List<Task>> _tasksStream;
 
   bool _saving = false;
+  bool _runningAutomation = false;
 
   @override
   void initState() {
@@ -66,6 +67,21 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
+  Future<void> _runAutomation() async {
+    setState(() => _runningAutomation = true);
+
+    try {
+      final run = await _repository.runTaskAutomation();
+      _showMessage(
+        'Function ejecutada. Total: ${run.totalTasks}, pendientes: ${run.pendingTasks}.',
+      );
+    } catch (error) {
+      _showMessage('No se pudo ejecutar la Function: $error', isError: true);
+    } finally {
+      if (mounted) setState(() => _runningAutomation = false);
+    }
+  }
+
   Future<void> _signOut() async {
     await _supabase.auth.signOut();
   }
@@ -92,6 +108,20 @@ class _TasksPageState extends State<TasksPage> {
       appBar: AppBar(
         title: const Text('Mis tareas'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton.filledTonal(
+              tooltip: 'Ejecutar Function',
+              onPressed: _runningAutomation ? null : _runAutomation,
+              icon: _runningAutomation
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.bolt),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton.filledTonal(

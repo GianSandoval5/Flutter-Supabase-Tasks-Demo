@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/task.dart';
+import '../domain/task_automation_run.dart';
 
 class TasksRepository {
   TasksRepository({SupabaseClient? client})
@@ -29,5 +30,33 @@ class TasksRepository {
 
   Future<void> deleteTask(int id) async {
     await _client.from('tasks').delete().eq('id', id);
+  }
+
+  Future<TaskAutomationRun> runTaskAutomation() async {
+    final response = await _client.functions.invoke(
+      'task-automation',
+      body: {
+        'run_type': 'manual',
+        'source': 'flutter-emulator',
+        'notes': 'Ejecucion manual desde la app Flutter',
+      },
+    );
+
+    final data = response.data;
+    if (data is! Map) {
+      throw StateError('Respuesta inesperada de la Function.');
+    }
+
+    final payload = Map<String, dynamic>.from(data);
+    if (payload['ok'] != true) {
+      throw StateError(payload['error']?.toString() ?? 'Function fallo.');
+    }
+
+    final run = payload['run'];
+    if (run is! Map) {
+      throw StateError('La Function no devolvio el registro de ejecucion.');
+    }
+
+    return TaskAutomationRun.fromMap(Map<String, dynamic>.from(run));
   }
 }
