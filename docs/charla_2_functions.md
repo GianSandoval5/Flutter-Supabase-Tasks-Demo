@@ -106,6 +106,12 @@ SUPABASE_PUBLISHABLE_KEY=TU_PUBLISHABLE_KEY
 
 Luego selecciona `Flutter Android: emulador (.env)` y presiona `Ctrl+F5`.
 
+Si quieres forzar el emulador desde terminal:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .vscode/run-flutter-emulator.ps1 -DeviceId emulator-5554
+```
+
 Prueba local opcional de la Function, si quieres usar Docker:
 
 ```bash

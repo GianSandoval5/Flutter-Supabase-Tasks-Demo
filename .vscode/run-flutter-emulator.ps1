@@ -1,3 +1,8 @@
+param(
+  [string]$DeviceId = '',
+  [switch]$DryRun
+)
+
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -44,7 +49,35 @@ if ($values['SUPABASE_SERVICE_ROLE_KEY'] -and $publishableKey -eq $values['SUPAB
   exit 1
 }
 
+$resolvedDeviceId = $DeviceId.Trim()
+if (!$resolvedDeviceId) {
+  $devicesJson = & flutter devices --machine
+  if ($LASTEXITCODE -ne 0) {
+    throw 'No se pudo listar dispositivos Flutter.'
+  }
+
+  $parsedDevices = $devicesJson | ConvertFrom-Json
+  $devices = if ($parsedDevices -is [array]) { $parsedDevices } else { @($parsedDevices) }
+  $androidDevice = $devices |
+    Where-Object { $_.isSupported -and $_.targetPlatform -like 'android*' } |
+    Select-Object -First 1
+
+  if (!$androidDevice) {
+    Write-Host 'No se encontro un emulador o dispositivo Android disponible.'
+    Write-Host 'Abre Android Studio Device Manager o ejecuta flutter devices para revisar.'
+    exit 1
+  }
+
+  $resolvedDeviceId = $androidDevice.id
+  Write-Host ("Dispositivo Android detectado: {0} ({1})" -f $androidDevice.name, $resolvedDeviceId)
+}
+
 Write-Host 'Ejecutando Flutter en emulador Android con Supabase remoto...'
-& flutter run -d android `
+if ($DryRun) {
+  Write-Host ("Dry run OK. DeviceId={0}" -f $resolvedDeviceId)
+  exit 0
+}
+
+& flutter run -d $resolvedDeviceId `
   --dart-define=SUPABASE_URL=$supabaseUrl `
   --dart-define=SUPABASE_PUBLISHABLE_KEY=$publishableKey

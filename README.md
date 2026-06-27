@@ -92,6 +92,13 @@ no debe entrar al APK.
 Luego abre un emulador Android, selecciona `Flutter Android: emulador (.env)` en
 VS Code y presiona `Ctrl+F5`.
 
+El script detecta automaticamente el primer dispositivo Android disponible. Si
+quieres forzar uno concreto desde terminal:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .vscode/run-flutter-emulator.ps1 -DeviceId emulator-5554
+```
+
 ## Validar antes de la charla
 
 ```bash
